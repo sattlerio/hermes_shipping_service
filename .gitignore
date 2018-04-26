@@ -13,3 +13,6 @@
 
 # build
 hermesShippingRuleService
+
+# ide
+.idea/

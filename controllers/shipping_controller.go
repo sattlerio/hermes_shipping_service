@@ -14,6 +14,33 @@ import (
 var DbConn *gorm.DB
 var err error
 
+func GetShippingRules(w http.ResponseWriter, r *http.Request) {
+	helpers.Info.Println("new request to fetch shipping rules")
+
+	transactionId := r.Header.Get("x-transactionid")
+	userId := r.Header.Get("x-user-id")
+
+	if len(transactionId) <= 0 || len(userId) <= 0 {
+		helpers.Warning.Println("got no user Id and no transaction id in the header")
+		w.WriteHeader(400)
+		response := api.Response{Status:"ERROR", StatusCode: 400, Message:"you have to be logged in to use this service", TransactionId:transactionId}
+
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	var shippingRules []models.ShippingRule
+
+	DbConn.Find(&shippingRules)
+
+	response := api.Response{Status:"OK", StatusCode:200, Message:"successfully fetched shipping rules", TransactionId:transactionId}
+	shipping_response := api.ShippingRuleResponse{Response:&response, Data:shippingRules}
+
+	json.NewEncoder(w).Encode(&shipping_response)
+	return
+
+}
+
 func CreateShippingRule(w http.ResponseWriter, r *http.Request) {
 	helpers.Info.Println("new request to create shipping rule")
 
