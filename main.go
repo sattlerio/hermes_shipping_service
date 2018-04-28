@@ -40,8 +40,8 @@ func main() {
 	controllers.DbConn = db
 
 	router.HandleFunc("/ping", controllers.PingController).Methods("GET")
-	router.HandleFunc("/all", controllers.GetShippingRules).Methods("GET")
-	router.HandleFunc("/create", controllers.CreateShippingRule).Methods("POST")
+	router.HandleFunc("/all/{company_id}", controllers.GetShippingRules).Methods("GET")
+	router.HandleFunc("/create/{company_id}", controllers.CreateShippingRule).Methods("POST")
 
 	helpers.Info.Println("successfully started server on Port 10000")
 
