@@ -19,6 +19,74 @@ var err error
 
 var RequiredPermission int = 3
 
+func DeleteShippingRule(w http.ResponseWriter, r *http.Request) {
+	helpers.Info.Println("new request to delete shipping rule")
+
+	transactionId := r.Header.Get("x-transactionid")
+	userId := r.Header.Get("x-user-uuid")
+
+	if len(transactionId) <= 0 || len(userId) <= 0 {
+		helpers.Warning.Println("got no user Id and no transaction id in the header")
+		w.WriteHeader(400)
+		response := api.Response{Status:"ERROR", StatusCode: 400, Message:"you have to be logged in to use this service", TransactionId:transactionId}
+
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	params := mux.Vars(r)
+	company_id := params["company_id"]
+	shippingRuleId := params["shipping_rule_id"]
+
+	if len(company_id) <= 0 || len(shippingRuleId) <= 0 {
+		helpers.Info.Println(transactionId + ": no company id or shipping rule id in request")
+		w.WriteHeader(400)
+		response := api.Response{Status:"ERROR", StatusCode:400, Message:"you have to submit a valid company id and shippingRuleId as url param", TransactionId:transactionId}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	guardianClient := client2.GuardianClient{Host:os.Getenv("GUARDIAN_URL"), CompanyId:company_id, UserId:userId}
+
+	guardianResponse, err := client2.CheckCompanyAndPermissionFromGuardian(guardianClient, RequiredPermission)
+	if err != nil {
+		helpers.Info.Println(transactionId + ": guardian host responded with errror, abort transaction")
+		helpers.Info.Println(err)
+		w.WriteHeader(500)
+		response := api.Response{Status:"ERROR", StatusCode:500, Message:"internal server error", TransactionId:transactionId}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	if !guardianResponse {
+		helpers.Info.Println(transactionId + ": user is not allowed to access company / settings")
+		w.WriteHeader(401)
+		response := api.Response{Status:"ERROR", StatusCode:401, Message:"not allowed to access", TransactionId:transactionId}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+	helpers.Info.Println(transactionId + " user is allowed to access, continue with request")
+
+	helpers.Info.Println(transactionId + ": trying to delete shipping rule with uuid and company id {" + shippingRuleId  + " / " + company_id + "}")
+	dbResult := DbConn.Where("shipping_rule_id = ? AND company_id = ?", shippingRuleId, company_id).Delete(&models.ShippingRule{})
+
+	if dbResult.Error != nil || dbResult.RowsAffected != 1 {
+		helpers.Info.Println(transactionId + ": not possible to delete rows no result affected or db raised error")
+		helpers.Info.Println(dbResult.Error)
+		helpers.Info.Println(dbResult.RowsAffected)
+		w.WriteHeader(500)
+		response := api.Response{Status:"ERROR", StatusCode:500, Message:"error not possible to delete entry", TransactionId:transactionId}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	helpers.Info.Println(transactionId + ": successfully deleted entry")
+	w.WriteHeader(200)
+	response := api.Response{Status:"OK", StatusCode:200, Message:"successfully deleted entry", TransactionId:transactionId}
+	json.NewEncoder(w).Encode(response)
+	return
+}
+
 func GetShippingRules(w http.ResponseWriter, r *http.Request) {
 	helpers.Info.Println("new request to fetch shipping rules")
 
