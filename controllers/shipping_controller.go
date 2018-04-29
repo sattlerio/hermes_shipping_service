@@ -68,7 +68,7 @@ func DeleteShippingRule(w http.ResponseWriter, r *http.Request) {
 	helpers.Info.Println(transactionId + " user is allowed to access, continue with request")
 
 	helpers.Info.Println(transactionId + ": trying to delete shipping rule with uuid and company id {" + shippingRuleId  + " / " + company_id + "}")
-	dbResult := DbConn.Where("shipping_rule_id = ? AND company_id = ?", shippingRuleId, company_id).Delete(&models.ShippingRule{})
+	dbResult := DbConn.Where("shipping_rule_id = ? AND company_id = ?", shippingRuleId, company_id).Delete(&models.ShippingRule{}, &models.ShippingRules2Countries{})
 
 	if dbResult.Error != nil || dbResult.RowsAffected != 1 {
 		helpers.Info.Println(transactionId + ": not possible to delete rows no result affected or db raised error")
@@ -201,6 +201,7 @@ func CreateShippingRule(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		helpers.Info.Println(transactionId + ": no valid shipping rule in Post body")
+		helpers.Info.Println(err)
 		w.WriteHeader(400)
 		response := api.Response{Status:"ERROR", StatusCode:400,
 			Message: "please submit a valid shipping rule object", TransactionId:transactionId}
@@ -221,6 +222,7 @@ func CreateShippingRule(w http.ResponseWriter, r *http.Request) {
 
 	guid := xid.New().String()
 	shippingRule.ShippingRuleId = guid
+	shippingRule.CompanyId = company_id
 
 	helpers.Info.Println(transactionId + ": successfully generate " + guid + " as id for the new shipping rule")
 

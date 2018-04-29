@@ -35,7 +35,7 @@ func main() {
 
 	defer db.Close()
 
-	db.AutoMigrate(&models.ShippingRule{})
+	db.AutoMigrate(&models.ShippingRule{}, &models.ShippingRules2Countries{})
 
 	controllers.DbConn = db
 
