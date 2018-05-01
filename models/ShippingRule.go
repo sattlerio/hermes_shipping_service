@@ -6,7 +6,7 @@ type ShippingRule struct {
 	gorm.Model
 
 	Name 			*string 					`gorm:"size:255;not null" json:"name"`
-	ShippingRuleId  string  					`gorm:"size:255;not null;unique" json:"shipping_rule_id"`
+	ShippingRuleId  string  					`gorm:"size:255 null;unique" json:"shipping_rule_id"`
 	
 	CompanyId 		string						`gorm:"size:255;not null;" json:"company_id"`
 
